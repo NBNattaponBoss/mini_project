@@ -1,0 +1,7 @@
+POST http://localhost:3000/api/multiple_by_2
+Content-Type: application/json
+
+{
+    "no_1": 5,
+    "no_2": 10
+}
