@@ -1,0 +1,9 @@
+# Runtime configuration
+my_app_server/.env
+
+# Generated files
+my_app/.dart_tool/
+my_app/build/
+my_app/.flutter-plugins
+my_app/.flutter-plugins-dependencies
+my_app_server/node_modules/

@@ -1,23 +1,6 @@
-var jwt = require('jsonwebtoken');
-var secretKey = "MySecretKey";
+const jwt = require('jsonwebtoken');
 
-module.exports = {
-    sign(payload) {
-        let token = jwt.sign(payload, secretKey, {
-            expiresIn: '1d'
-        });
-        return token;
-    },
+const getSecret = () => process.env.JWT_SECRET || 'change-this-development-secret';
 
-    verify(token) {
-        return new Promise((resolve, reject) => {
-            jwt.verify(token, secretKey, (err, decoded) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(decoded);
-                }
-            });
-        });
-    }
-}
+exports.sign = (user) => jwt.sign({ userId: user.id, username: user.username }, getSecret(), { expiresIn: '1d' });
+exports.verify = (token) => jwt.verify(token, getSecret());

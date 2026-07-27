@@ -1,7 +1,35 @@
-POST http://localhost:3000/api/multiple_by_2
+@baseUrl = http://localhost:3000/api
+@token = paste-jwt-token-here
+
+### Login (create the user and bcrypt password hash in MariaDB first)
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-    "no_1": 5,
-    "no_2": 10
+  "username": "admin",
+  "password": "123456"
 }
+
+### Dashboard
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{token}}
+
+### Create a deposit
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "deposit",
+  "amount": 10000,
+  "transaction_date": "2026-07-26",
+  "description": "Salary"
+}
+
+### Filter transactions
+GET {{baseUrl}}/transactions?type=deposit&month=7&year=2026
+Authorization: Bearer {{token}}
+
+### Monthly summary
+GET {{baseUrl}}/summary/monthly?month=7&year=2026
+Authorization: Bearer {{token}}
