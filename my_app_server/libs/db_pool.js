@@ -1,3 +1,10 @@
+// ==============================================================================
+// โมดูลจัดการ Database Connection Pool ด้วย MariaDB Driver
+// ==============================================================================
+// Connection Pool คือ การสร้างและดูแลกลุ่มของ Database Connection เตรียมไว้ล่วงหน้า
+// ช่วยลด Overhead และเวลาแฝง (Latency) ในการเปิด-ปิด TCP Connection ใหม่ทุกครั้งที่มี Request เข้ามา
+// เมื่อต้องการใช้งานจะขอยืม Connection ผ่าน pool.getConnection() และคืนกลับด้วย connection.release()
+
 const mariadb = require('mariadb');
 
 module.exports = mariadb.createPool({
@@ -10,5 +17,7 @@ module.exports = mariadb.createPool({
   port: Number(
     process.env.DB_PORT || 3306,
   ),
+  // กำหนดจำนวน Connection สูงสุดที่ Pool จะเปิดไว้พร้อมกัน (Concurrent Connections)
+  // ช่วยควบคุมการใช้งานทรัพยากรของฐานข้อมูลไม่ให้สูงเกินไป
   connectionLimit: 5,
 });

@@ -7,3 +7,9 @@ my_app/build/
 my_app/.flutter-plugins
 my_app/.flutter-plugins-dependencies
 my_app_server/node_modules/
+
+# IDE
+.idea/
+
+# JVM crash logs
+hs_err_pid*.log

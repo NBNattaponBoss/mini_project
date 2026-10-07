@@ -1,5 +1,12 @@
+// ==============================================================================
+// Register Screen: หน้าจอสมัครสมาชิกใหม่สำหรับสร้างบัญชีผู้ใช้งาน
+// ==============================================================================
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:my_app/theme/app_colors.dart';
 import 'package:my_app/utils/app_api.dart';
+import 'package:my_app/widgets/animated_header.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,6 +24,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirm = TextEditingController();
 
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -27,32 +36,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  /// ฟังก์ชันส่งคำขอสมัครสมาชิก (Register Flow):
+  /// 1. ตรวจสอบความถูกต้องของ Form (Validation: กรอกครบ, รหัสผ่าน >= 6 ตัวอักษร, รหัสผ่านตรงกัน)
+  /// 2. เรียก API POST `/auth/register` พร้อมแนบ fullname, username, password
+  /// 3. หากสำเร็จ แสดง Alert ยืนยัน และพากลับไปยังหน้า Login เพื่อเข้าสู่ระบบ
+  /// 4. หากชื่อผู้ใช้ซ้ำหรือข้อมูลผิดพลาด แสดง Alert แจ้งเตือน
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await AppApi.post(
+      final response = await AppAPI.post(
         '/auth/register',
         {
-          // ✅ เปลี่ยนจาก full_name เป็น fullname
           'fullname': _name.text.trim(),
           'username': _username.text.trim(),
           'password': _password.text,
         },
+        auth: false,
       );
 
-      if (!mounted) return;
+      final json = jsonDecode(response.body);
+      final isError = json['isError'] ?? (json['success'] == false);
+      final errorMessage = json['errorMessage'] ?? json['message'] ?? '';
 
-      _message('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ');
-      Navigator.pop(context);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      _message(e.message);
+      if (!isError) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('สำเร็จ'),
+            content: const Text('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // ปิด Dialog
+                  Navigator.pop(context); // ย้อนกลับไปยังหน้า LoginScreen
+                },
+                child: const Text('ตกลง'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        _showErrorDialog(
+          errorMessage.isNotEmpty
+              ? errorMessage
+              : 'เกิดข้อผิดพลาดในการสมัครสมาชิก',
+        );
+      }
     } catch (e) {
       if (!mounted) return;
-      _message('เกิดข้อผิดพลาด : $e');
+      _showErrorDialog('Unable to connect to the server.');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -60,9 +98,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _message(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
+
+  void _showErrorDialog(String text) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('แจ้งเตือน'),
+        content: Text(text),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ตกลง'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -71,6 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String label,
     IconData icon, {
     bool obscure = false,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -79,6 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
+        suffixIcon: suffixIcon,
         border: const OutlineInputBorder(),
       ),
       validator: validator ??
@@ -92,8 +144,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('สมัครสมาชิก'),
+      appBar: const AnimatedTangKepHeader(
+        title: 'สมัครสมาชิก',
       ),
       body: SafeArea(
         child: Center(
@@ -142,7 +194,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _password,
                       'รหัสผ่าน',
                       Icons.lock_outline,
-                      obscure: true,
+                      obscure: _obscurePassword,
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       validator: (value) {
                         if (value == null || value.length < 6) {
                           return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
@@ -157,7 +222,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _confirm,
                       'ยืนยันรหัสผ่าน',
                       Icons.lock_reset_outlined,
-                      obscure: true,
+                      obscure: _obscureConfirmPassword,
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword =
+                                !_obscureConfirmPassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       validator: (value) {
                         if (value != _password.text) {
                           return 'รหัสผ่านไม่ตรงกัน';

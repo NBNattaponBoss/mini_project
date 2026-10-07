@@ -1,9 +1,11 @@
-/*class AppConfig {
-  // Android emulator uses 10.0.2.2 to reach the host machine. Replace when using a physical device.
-  static const String apiBaseUri = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:3000/api');
-}*/
+// ==============================================================================
+// การตั้งค่าทั่วไปของแอปพลิเคชัน (Application Configuration)
+// ==============================================================================
 
 class AppConfig {
+  /// Base URL ของ Backend API Server
+  /// สามารถกำหนดผ่าน `--dart-define=API_BASE_URL=...` ตอน compile/run ได้
+  /// หากไม่กำหนด จะใช้ค่าเริ่มต้นเป็น `http://localhost:3000/api`
   static const String apiBaseUri =
       String.fromEnvironment(
         'API_BASE_URL',
